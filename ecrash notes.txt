@@ -1,0 +1,189 @@
+API LISTENER
+
+1. interact with API and get list of files to be processed
+
+-which API? location?
+
+-where is the repository of input images?
+
+
+2. Loop each file and move to ML and OCR process
+
+-i assume this is taken care by the python script
+
+
+CONTENT EXTRACTION
+
+1. script will monitor ML and OCR outputs
+
+-the tiff image will get converted to .csv and .pdf respectively using a python script which corresponds to the bounding boxes coordinates and a searchable pdf
+
+-i wanna see a sample of this csv and searchable pdf
+
+2. read csv-ml and corresponding pdf-ocr then extract content as json
+
+-from previous step, it will now try to extract the relevant fields from the searchable pdf using the csv coordinates and output it as json.
+
+-i wanna see a sample of this json file.
+
+3. send json response to keying service
+
+-how do you send the json response to the keying service? which script handles this?
+
+
+PROCESS in my understanding
+
+1. get tiff images from a repository using an API call
+
+2. there is a script that checks if an image is extracted from the repository.
+
+3. the extracted image is processed using two python scripts, one is using a machine learning model that extracts the coordinates of the relevant fields and outputs a csv file containing these information. another is using image processing to remove pipe from the image of ecrash reports so that it can extract the fields with better accuracy (i.e., pipes | won't be mistaken as 1 or I)
+
+4. the pipe-removed image will be sent to the ocr engine (omnipage). where it will convert the ecrash report image to a searchable pdf using ocr processing. the output of this step is a searchable pdf.
+
+5. the searchable pdf in conjunction with the csv coordinates will be used to create the final json output which will be sent to the keying service to populate the forms.
+
+6. for single pass, this means that the auto extract pipeline was able to extract all the relevant fields. if there are errors, it will be subjected to double pass where it first passes through auto extract then a human validator will populate the forms and validate it after.
+
+
+FURTHER DETAILS
+
+1. python packages used
+
+-OpenCV, pypdf, numpy, pillow, etree, regex, json, pandas, tqdm
+
+2. uses tensorflow for extracting coordinates, probably using object detection models
+
+3. high memory packages like tensorflow are run on ubuntu.
+ 
+4. moderate memory packages like OpenCV, pypdf, pillow, etc. are on both windows and ubuntu.
+
+5. ocr is optimized for accuracy vs speed
+
+
+QUESTIONS:
+
+1. docker (Texas, pipe) what does it mean?
+
+2. Why deploy or run scripts using jupyterlab?
+
+3. Ask to add text instructions by step in omnipage configuration
+
+4. Does omnipage delete the input files after every run?
+
+5. volume permissions nobody, nobody
+
+6. 
+
+
+
+ML PROCESS FLOW
+
+1. tiff image repository
+
+2. file watcher script pull tiff images from the repository
+
+3. the pulled images are sent to the model folder and the pipe folder
+
+4. the model folder images are sent to the ML model the detects the relevant fields to be extracted, the output is a csv file of the fields and their coordinates
+
+5. the pipe folder images are sent to the pipe removal algorithm using image processing for cleaning
+
+6. the cleansed tiff images from step 5 are sent to the omnipage ocr. the output of this process is a searchable pdf
+
+7. the searchable pdf and the csv file from step 4 are fed to the extraction script for the final extraction of the relevant fields, the output of this process is a json containing the relevant fields 
+
+
+COMPLEXITY ANALYSIS - POC
+
+1. there are structured and unstructured layouts (samples?)
+
+2. there are multiple variations for the boxes (e.g., check, cross, dot), (what is the challenge here?)
+
+3. there are floating and hanging data (what does this mean?)
+
+4. the passenger information are in tabular format which can be bordered or borderless
+
+5. the relevant data is spread across the document
+
+6. the data can be split in two separate pages which can be difficult to segment
+
+7. the document format has multiple font styles and sizes (e.g., bold font with size 12, normal font with size 10 for the same information)
+
+8. the scan quality is another challenge as it can be poor, blurred, or deskewed (i.e., rotated at some degree)
+
+9. the documents come in different dimensions like 2500x3300 or 1550x1750 (do you normalize its size?)
+
+10. the documents come in different dots per inch (dpi), like 200 or 300
+
+
+ITERATIONS
+
+1. tried a direct template approach (what does it mean?). it failed due to oscillation in layouts - the image are not in standard position. (i'm guessing it is because some of them are skewed). cropping the edges and match are failed due to the document having different widths and heights.
+
+2. OpenCV box extraction. it worked for standard layout but failed for unstructured layout (what does a standard and an unstructured layout look like?)
+
+3. object detection. worked better but this requires annotation of images/forms to create the training data for the model.
+
+4. object detection + data augmentation. worked with different dimensions/sizes, quality (i.e., blurred, poor), skewed document, different fonts, and different layouts. (mentioned that it simplified annotation, i'm guessing it was due to the augmentation, which volumes up the training data without additional annotation)
+
+
+CODE MAINTENANCE FOR 57 STATES
+
+1. created a processing script for every state so that when changes need to be implemented, it will only affected the state of interest and not the other states. same goes for code upgrade, or changes in files associated with a state. (noticed that some states' parameters are different from others)
+
+example for Texas,
+
+data, tif_name = texax_main.process(csv_file_path, temp_path)
+
+while for Wisconsin
+
+data, tif_name = wisconsin_main.process(csv_file_path, temp_path, check_box_model)
+
+
+2. the standard output is data and the tiff name
+
+
+DICTIONARY APPROACH FOR CODES (need details for this)
+
+1. i'm guessing this is how they populate a data structure, a dictionary, with the relevant fields like driver's license number, vehicle's unit number, etc.
+
+
+DOCKER DEPLOYMENT ITERATIONS
+
+1. single docker image + multiple ml models (5 ml models) which achieved 4k docs processing per day. this was good during the initial stage. though, the files are queued for a long time and hence slowed down the pipeline. they also used jupyterlab, which they mentioned as not suitable for deployment process, duh.
+
+-all api calls and file transfers are run on top of jupyterlab (like why?)
+
+-the ram consumption exponentially increases daily (e.g., day 1 - 250MB, day 15 - 3GB)
+
+-have to manually run each python and the client mentioned that they are not comfortable doing so
+
+
+2. modified approach using bash file
+
+-created a bash file to trigger and run multiple python scripts
+
+-single click to run all scripts as background process. but this is still manual, duh.
+
+-used 2 docker images and 15+ ml models which achieved 8k docs processing per day (so, they doubled the docker image instance, and tripled the ml models using but it only doubled the number of documents processed per day)
+
+-used 3 docker images and more than 15+ ml models (like how many? they should specify this). this achieved 11k docs processed per day. (not so good scaling)
+
+
+OCR DEPLOYMENT ITERATIONS
+
+1. deep cleaning pipeline (i'm guessing this for normalizing the images, removing the pipes, and other image processing stuff). then fed to multiple instances of the ocr engine. and finally feeding the output to the json processing, (i'm guessing this is the process where they use the csv and the searchable pdf to build the json output). initial plan was to use up to 50 ocr instances.
+
+2. deep cleaning, then, ocr feeder (not sure what this is, im guessing this is a queueing script to distribute the files to the ocr instances). this time they used 5 then increased it to 7 based on their monitoring. finally it is fed to the json process. the difference in this approach is that they used fewer ocr instances and an ocr feeder.
+
+
+DEPLOYMENT - HOT FOLDERS ITERATION
+
+1. every state has its own folder before feeding to the ml process
+
+2. used filename_statecode format (e.g., 001_tx.tif then saved to a hot folder, the ml process gets the data from this hot folder
+
+
+PROD - FILE MONITORING (they didn't add any details into this)
+

@@ -1,0 +1,43 @@
+POINTS:
+
+-number of keyers proportional to performance of ecrash
+
+-if ecrash perf is good, then less keyers needed because they wont need to devote more time to manually check
+
+-priority will change the timeline (i.e., doing lots of improvement in the code can push back the plan to migrate to the new architecture. this is just prolonging the agony since we have to address the issues with the current architecture)
+
+-can create a simpler timeline without technical details, but they are asking for details. i can remove some details while retaining necessary information.
+
+-how long to support? and what's the timeline for tool improvement?
+
+-ask which one to prioritize? support of the tool? or improvement of performance?
+
+-doing immersion and dev work with strive can speed up knowledge transfer which is beneficial for support of the tool while using the current infrastructure
+
+-doing migration and creating the new architecture is inevitable since even if we were able to take full support or ownership of the tool, we still need to do the heavy lifting to fill in the gaps to address the problems of the current architecture
+
+-we can strike a balance between immersion and doing the migration
+
+-the immersion can serve as a data gathering (say 3 months of immersion or collaboration, then minimize the tickets taken every sprint from straive side to have more bandwidth for the development of the new architecture) for us in a way that we will be able to gauge which issues to address first and eventually work on it
+
+-we can push strive to prioritize on working the issues that i have raised
+
+-the current timeline proposed doesn't take into account that i will be doing immersion or dev work with straive while working on the new architecture, hence it was shorter
+
+-the model improvement was not a priority in the current timeline since we assumed that it will be straive who will be doing this
+
+-bala mentioned that there needs to be an overhaul in the model to address an issue, we need to ask for more details about this
+
+-we need to ask the upper management what their objective really is and which one they want to prioritize. is it just knowing how many keyers are needed to hire? or are they after the improvement of the project too? or are they after making sure that we own the project and support it at the fastest time?
+
+-if the management bounces back the question to us on which to prioritize, then that's already answered in the current timeline proposed (i.e., we want to improve the architecture so that it is easier for us to work on the errors and performance issues, at the same time improving the workflow and thereby potentially reducing the time spent to address the bugs or retraining the model. not to mention that we will also have more visibility on which part of the pipeline is causing an issue by having a robust monitoring and logging pipeline)
+
+-need to be proactive in communicating with straive about the collabs to know how responsive or participative they are
+
+-the fact that straive created a cloud migration plan, tells us that they know that the current architecture isn't enough for scaling in the future and that it can't address the problems properly (e.g., ci/cd, monitoring, logging, testing, etc.)
+
+-it is a red flag to see how they initially do things with respect to deploying this project to prod (i.e., using jupyterlab for running the scripts, like bruh?)
+
+-need to know how straive do things and point out and suggest things. to have visibility and voice on what direction we want the project to take
+
+-need to know if they are just inflating the time commitment for an issue
